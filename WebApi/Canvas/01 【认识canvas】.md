@@ -1,4 +1,4 @@
-# 01 【认识canvas】
+# 01 【认识 canvas】
 
 ## 1.概述
 
@@ -19,8 +19,8 @@
 每个`<canvas>`元素都有一个对应的`CanvasRenderingContext2D`对象（上下文对象）。Canvas API 就定义在这个对象上面。
 
 ```js
-var canvas = document.getElementById('myCanvas');
-var ctx = canvas.getContext('2d');
+var canvas = document.getElementById("myCanvas");
+var ctx = canvas.getContext("2d");
 ```
 
 上面代码中，`<canvas>`元素节点对象的`getContext()`方法，返回的就是`CanvasRenderingContext2D`对象。
@@ -29,3 +29,18 @@ var ctx = canvas.getContext('2d');
 
 按照用途，Canvas API 分成两大部分：绘制图形和图像处理。
 
+### width、height
+
+canvas 标签中有 width 与 height 这两个属性，默认是 canvas 画布的大小，且 dom 元素的 width 与 height 默认与属性一致。
+但如果显示设定 style 中的 width 与 height：
+
+```html
+<canvas
+  id="c1"
+  width="600"
+  height="400"
+  style="width: 200px; height: 200px;"
+></canvas>
+```
+
+可以理解成原来大小为 600*400 的图片，被压缩到了 200*200.

@@ -1,6 +1,22 @@
-# 02 【canvas绘制基本图形】
+# 02 【canvas 绘制基本图形】
 
 Canvas 画布提供了一个作图的平面空间，该空间的每个点都有自己的坐标。原点`(0, 0)`位于图像左上角，`x`轴的正向是原点向右，`y`轴的正向是原点向下。
+
+## 画笔与画笔移动
+
+cavas 有三个基本要素：画布（<canvas>元素）、画笔（ctx）、绘画方法（ctx 的各种方法）
+canvas 画图类似于人的画图，从某个点画到某个点，因此有如下的两个 api：
+
+- beginPath：开始绘制新的路径（起点）
+- closePath：返回路径起始点，从当前点到起始点绘制直线。
+- moveTo：直接将画笔移动到 x, y 这个点，绘制新的起始点。
+
+## stroke 与 fill
+
+在 canvas 中，利用画笔画出来的路径默认是看不到的，必须调用 ctx.stroke()或者 ctx.fill()来决定图形样式。
+
+- fill：填充路径内部
+- stroke：路径着色
 
 ## 1.绘制三角形
 
@@ -17,8 +33,8 @@ Canvas 画布提供了一个作图的平面空间，该空间的每个点都有�
 
 ```js
 /** @type {HTMLCanvasElement} */
-var canvas = document.getElementById('myCanvas');
-var ctx = canvas.getContext('2d');
+var canvas = document.getElementById("myCanvas");
+var ctx = canvas.getContext("2d");
 
 ctx.beginPath();
 ctx.moveTo(100, 100);
@@ -29,9 +45,9 @@ ctx.lineTo(100, 200);
 上面代码只是确定了路径的形状，画布上还看不出来，因为没有颜色。所以还需要着色。
 
 ```js
-ctx.fill()
+ctx.fill();
 // 或者
-ctx.stroke()
+ctx.stroke();
 ```
 
 上面代码中，这两个方法都可以使得路径可见。
@@ -47,10 +63,10 @@ ctx.stroke()
 这两个方法默认都是使用黑色，可以使用`fillStyle`和`strokeStyle`属性指定其他颜色。
 
 ```js
-ctx.fillStyle = 'red';
+ctx.fillStyle = "red";
 ctx.fill();
 // 或者
-ctx.strokeStyle = 'red';
+ctx.strokeStyle = "red";
 ctx.stroke();
 ```
 
@@ -69,27 +85,27 @@ ctx.stroke();
 
 ```js
 // 格式
-ctx.arc(x, y, radius, startAngle, endAngle, anticlockwise)
+ctx.arc(x, y, radius, startAngle, endAngle, anticlockwise);
 
 // 实例
-ctx.arc(50, 50, 30, 0, 2 * Math.PI, true)
+ctx.arc(50, 50, 30, 0, 2 * Math.PI, true);
 ```
 
 `arc()`方法的`x`和`y`参数是圆心坐标，`radius`是半径，`startAngle`和`endAngle`则是扇形的起始角度和终止角度（以弧度表示），`anticlockwise`表示做图时应该逆时针画（`true`）还是顺时针画（`false`），这个参数用来控制扇形的方向（比如上半圆还是下半圆）。
 
 ![image-20221227193323852](https://i0.hdslb.com/bfs/album/747f68e53ce578c0c9043a939e4daa88be7bb613.png)
 
-上面代码绘制了一个半径30，起始角度为0，终止角度为 2 * PI 的完整的圆。
+上面代码绘制了一个半径 30，起始角度为 0，终止角度为 2 \* PI 的完整的圆。
 
 绘制空心半圆的例子。
 
 ```js
-var canvas = document.getElementById('myCanvas');
-var ctx = canvas.getContext('2d');
+var canvas = document.getElementById("myCanvas");
+var ctx = canvas.getContext("2d");
 
-ctx.moveTo(50, 100)
-ctx.arc(100, 100, 50, 0, Math.PI, false)
-ctx.stroke()
+ctx.moveTo(50, 100);
+ctx.arc(100, 100, 50, 0, Math.PI, false);
+ctx.stroke();
 ```
 
 ![image-20221227194258658](https://i0.hdslb.com/bfs/album/d00e1b61af28fecf4a52b27b58a1fb066d2fa8e6.png)
@@ -97,8 +113,8 @@ ctx.stroke()
 `CanvasRenderingContext2D.arcTo()`方法主要用来绘制圆弧，需要给出两个点的坐标，当前点与第一个点形成一条直线，第一个点与第二个点形成另一条直线，然后画出与这两根直线相切的弧线。
 
 ```js
-var canvas = document.getElementById('myCanvas');
-var ctx = canvas.getContext('2d');
+var canvas = document.getElementById("myCanvas");
+var ctx = canvas.getContext("2d");
 
 ctx.beginPath();
 ctx.moveTo(0, 0);
@@ -107,33 +123,44 @@ ctx.lineTo(100, 0);
 ctx.stroke();
 ```
 
-上面代码中，`arcTo()`有5个参数，前两个参数是第一个点的坐标，第三个参数和第四个参数是第二个点的坐标，第五个参数是半径。然后，`(0, 0)`与`(50, 50)`形成一条直线，然后`(50, 50)`与`(100, 0)`形成第二条直线。弧线就是与这两根直线相切的部分。
+上面代码中，`arcTo()`有 5 个参数，前两个参数是第一个点的坐标，第三个参数和第四个参数是第二个点的坐标，第五个参数是半径。然后，`(0, 0)`与`(50, 50)`形成一条直线，然后`(50, 50)`与`(100, 0)`形成第二条直线。弧线就是与这两根直线相切的部分。
 
 绘制一个笑脸
 
 ```js
-var canvas = document.getElementById('myCanvas');
-var ctx = canvas.getContext('2d');
+// 获取画布
+const c1 = document.getElementById("c1");
+// 获得画笔
+if (!c1.getContext) {
+  alert("当前浏览器不支持canvas");
+}
+const ctx = c1.getContext("2d");
 
-ctx.beginPath()
-ctx.arc(150, 140, 100, 0, 2 * Math.PI, false)
-ctx.stroke()
-ctx.closePath()
+ctx.beginPath();
+// 脸
+ctx.arc(100, 100, 100, 0, Math.PI * 2);
+// ctx.fill(); // 起点和重点项链
+ctx.stroke();
+// ctx.fillStyle = "red";
+ctx.closePath();
 
-ctx.beginPath()
-ctx.arc(100, 100, 10, 0, 2 * Math.PI, false)
-ctx.stroke()
-ctx.closePath()
+// 眼睛
+ctx.beginPath();
+ctx.arc(50, 50, 25, 0, Math.PI * 2);
+ctx.fill();
+ctx.closePath();
 
-ctx.beginPath()
-ctx.arc(200, 100, 10, 0, 2 * Math.PI, false)
-ctx.stroke()
-ctx.closePath()
+// 眼睛
+ctx.beginPath();
+ctx.arc(150, 50, 25, 0, Math.PI * 2);
+ctx.fill();
+ctx.closePath();
 
-ctx.beginPath()
-ctx.arc(150, 140, 70, 0, Math.PI, false)
-ctx.stroke()
-ctx.closePath()
+// 嘴
+ctx.beginPath();
+ctx.arc(100, 150, 30, 0, Math.PI);
+ctx.stroke();
+ctx.closePath();
 ```
 
 ![image-20221227202144199](https://i0.hdslb.com/bfs/album/5e047282d40998988c9f69d3fab6c0eb9a16f1ce.png)
@@ -152,8 +179,8 @@ ctx.closePath()
 `CanvasRenderingContext2D.rect()`方法用于绘制矩形路径。
 
 ```js
-var canvas = document.getElementById('myCanvas');
-var ctx = canvas.getContext('2d');
+var canvas = document.getElementById("myCanvas");
+var ctx = canvas.getContext("2d");
 
 ctx.rect(10, 10, 100, 100);
 ctx.fill();
@@ -161,41 +188,41 @@ ctx.fill();
 
 ![image-20221227202533630](https://i0.hdslb.com/bfs/album/9c4582aebee82798a4073cbfd385c69c6b431e8c.png)
 
-上面代码绘制一个正方形，左上角坐标为`(10, 10)`，宽和高都为100。
+上面代码绘制一个正方形，左上角坐标为`(10, 10)`，宽和高都为 100。
 
 `CanvasRenderingContext2D.fillRect()`用来向一个矩形区域填充颜色。
 
 ```js
-var canvas = document.getElementById('myCanvas');
-var ctx = canvas.getContext('2d');
+var canvas = document.getElementById("myCanvas");
+var ctx = canvas.getContext("2d");
 
-ctx.fillStyle = '#bfa';
+ctx.fillStyle = "#bfa";
 ctx.fillRect(10, 10, 100, 100);
 ```
 
 ![image-20221227202811172](https://i0.hdslb.com/bfs/album/4ea1f25905bb3aadfc42b8aef2567a99dea49f0e.png)
 
-上面代码绘制一个绿色的正方形，左上角坐标为`(10, 10)`，宽和高都为100。
+上面代码绘制一个绿色的正方形，左上角坐标为`(10, 10)`，宽和高都为 100。
 
 `CanvasRenderingContext2D.strokeRect()`用来绘制一个矩形区域的边框。
 
 ```js
-var canvas = document.getElementById('myCanvas');
-var ctx = canvas.getContext('2d');
+var canvas = document.getElementById("myCanvas");
+var ctx = canvas.getContext("2d");
 
-ctx.strokeStyle = 'green';
+ctx.strokeStyle = "green";
 ctx.strokeRect(10, 10, 100, 100);
 ```
 
-上面代码绘制一个绿色的空心正方形，左上角坐标为`(10, 10)`，宽和高都为100。
+上面代码绘制一个绿色的空心正方形，左上角坐标为`(10, 10)`，宽和高都为 100。
 
 ![image-20221227202908811](https://i0.hdslb.com/bfs/album/36bc6b2b09901c19a6af9d687bfc98fe972bb9fd.png)
 
 `CanvasRenderingContext2D.clearRect()`用于擦除指定矩形区域的像素颜色，等同于把早先的绘制效果都去除。
 
 ```js
-var canvas = document.getElementById('myCanvas');
-var ctx = canvas.getContext('2d');
+var canvas = document.getElementById("myCanvas");
+var ctx = canvas.getContext("2d");
 
 ctx.fillRect(10, 10, 100, 100);
 ctx.clearRect(15, 15, 90, 90);
@@ -203,4 +230,4 @@ ctx.clearRect(15, 15, 90, 90);
 
 ![image-20221227203628451](https://i0.hdslb.com/bfs/album/3106a07088526540d31c72384aaaf23ed5b4f5cf.png)
 
-上面代码先绘制一个 100 x 100 的正方形，然后在它的内部擦除 90 x 90 的区域，等同于形成了一个5像素宽度的边框。
+上面代码先绘制一个 100 x 100 的正方形，然后在它的内部擦除 90 x 90 的区域，等同于形成了一个 5 像素宽度的边框。
