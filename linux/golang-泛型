@@ -1,0 +1,528 @@
+#### 泛型（go 1.18）（了解）
+
+泛型，即把类型作为对象来“编程”。
+
+**go的泛型也支持类型推导**
+
+泛型的目的：在调用时自动判断参数的类型
+
+```GO
+func printSlices(s interface{}) {
+	// 通过断言来确定s的类型
+    if _, ok := s.([]string); ok {
+		fmt.Printf("s: %v\n", s)
+	}
+}
+```
+
+泛型的实现：
+
+```go
+// go中的泛型使用 []，[]中可以约束泛型的类型
+func printSlices[T any](s []T) {
+    for _, val := range s {
+        println(val)
+    }
+}
+
+```
+
+priceSlices，[T any]泛型的约束，希望使用者传递这个类型。
+
+```go
+func main() {
+    // 使用时告诉函数的类型
+    min[int](2, 4)
+	// 自动推导，编译器干的
+    min(2, 4)
+}
+// 最基本的泛型使用
+func min[T int|float32|float64] Min(a, b) T {
+    if a < b {
+        return a
+    }
+    return b
+}
+```
+
+
+
+泛型的作用
+
+1.减少重复性的代码，提高安全性
+
+* 针对不同类型的值，写了同样逻辑的代
+
+2、泛型不能完全取代反射！
+
+```
+var 变量名 变量类型 = 值
+var 变量名 T = 值
+
+```
+
+
+
+在type中使用泛型：
+
+```GO
+type S1 []int
+type S2 []float64
+
+// 这里的|，告诉编辑器，运行时的类型只能是int、float64
+var stringSlice NumSlice[string] // 这个不行，因为约束里没有string类型
+type NumSlice[T int|float64] []T
+
+func test() {
+    var s1 S1 = []int{1, 2, 3}
+    // 在使用时决定T的具体“类型”
+    // 类型的“占位符”，在使用时确定T的具体类型
+    var s2 NumSlice[int] = []int{1, 2, 3}
+    
+    // ts这样子的在go里是不行滴
+    var s3 NumSlice = []int{1, 2, 3}
+}
+```
+
+
+
+练习：
+
+``` go
+// map泛型
+// Key只能是string或者int，Value只能是float类型
+type MyMap[K string|int, V float64|float32] map[K]V
+
+// Key可以是任何类型
+type MyMap2[K any, V int] map[K]V
+
+var myMap1 MyMap[string, float32] = map[string]float32{
+    "xiaoming": 99.9,
+}
+
+
+// 结构体
+type MyStruct[T int|string] struct {
+    Id T
+}
+
+type MyInterface[T int|int8] interface {
+    PrintData(data T)
+}
+
+// 以前的接口
+type XXXInterface interface {
+    PrintData(data int)
+    PrintData(data int8)
+}
+```
+
+特殊的泛型：
+
+``` go
+type AAAA[T int | string] int
+
+var a AAAA = 22
+// 下面的不行，实际的类型就是Int
+var b AAAA = "22"
+```
+
+### 补充
+
+在golang中，type定义的类型都可以自己的方法：
+```go
+type Int int
+
+func (i Int) add5() int {
+	// i没有了int的原来方法和计算
+    // 本身就是个int，转成int再加5
+	return int(i) + 5
+}
+
+func main() {
+	var i Int = 20
+	println(i.add5())
+}
+
+```
+
+1. 泛型类型（自定义类型结合泛型使用）
+2. 泛型作为接收者（实现函数的灵活变化）
+3. 泛型函数（参数是函数）
+
+
+
+#### 自定义返现
+
+```go
+
+// 用interface声明约束
+type MyInt interface {
+    int|float32|float64|int32 // 不是方法，而是作用于泛型
+}
+
+func GetMaxNum[T MyInt](a, b T) T {
+    if a < b {
+        return a
+    }
+    return b
+}
+```
+
+内置泛型类型
+
+1. any，其实就是空接口inteface
+
+2. comparable，所以可以比较的类型
+
+
+
+~，支持衍生类型
+
+```go
+type Int8A int8
+
+type Int8B int8
+
+type NewInt interface {
+	~int8
+}
+
+func add[T NewInt](a, b T) T {
+	return T(int8(a) + int8(b))
+}
+
+```
+
+
+
+
+
+## 网络编程-web开发
+
+go的任何网络框架，底下都是基于 net 包的，http包也在net下面，下面的代码展示了一个起一个基本的web server：
+```go
+package main
+
+import (
+	"fmt"
+	"net/http"
+)
+
+func main() {
+	// 监听一个hello路由
+	http.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
+		// 打印一些信息
+		fmt.Println(r.URL);
+		fmt.Println(r.URL.Query()) // query
+
+		// 写回一些数据
+		w.Write([]byte("<h2>heelo</h2>"))
+	})
+
+
+	// 起在9091端口
+	// 传入nil，则默认处理是404
+	http.ListenAndServe(":9091", nil)
+}
+```
+
+
+
+有了服务端，golang默认也提供了客户端的方法：
+
+###### GET、POST、PUT、PATCH
+
+```go
+package main
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+)
+
+func main() {
+	// get()
+	// post()
+	// put()
+	patch()
+}
+
+func get() {
+	r, err := http.DefaultClient.Get("http://httpbin.org/get")
+	if err != nil {
+		panic(r)
+	}
+
+	// 关闭body
+	defer r.Body.Close()
+
+	data, err := io.ReadAll(r.Body)
+
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("get content: %s", string(data))
+}
+
+func post() {
+	r, err := http.DefaultClient.Post("http://httpbin.org/post", "", nil)
+	if err != nil {
+		panic(r)
+	}
+
+	// 关闭body
+	defer r.Body.Close()
+
+	data, err := io.ReadAll(r.Body)
+
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("post content: %s", string(data))
+}
+
+func put() {
+	// 创建一个request，body可传
+	request, err := http.NewRequest(http.MethodPut, "http://httpbin.org/put", nil)
+	if err != nil {
+		panic(err)
+	}
+
+	// http.Client.Do，发送请求
+	r, err := http.DefaultClient.Do(request)
+
+	// 关闭body
+	defer r.Body.Close()
+
+	data, err := io.ReadAll(r.Body)
+
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("put content: %s", string(data))
+}
+
+func patch() {
+	// 创建一个request，body可传
+	request, err := http.NewRequest(http.MethodPatch, "http://httpbin.org/patch", nil)
+	if err != nil {
+		panic(err)
+	}
+
+	// http.Client.Do，发送请求
+	r, err := http.DefaultClient.Do(request)
+
+	// 关闭body
+	defer r.Body.Close()
+
+	data, err := io.ReadAll(r.Body)
+
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("put content: %s", string(data))
+}
+```
+
+实现了PUT和PATCH后，Delete、Restore也是同样的实现。
+
+
+
+##### 设置请求信息和头部
+
+```go
+package main
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+)
+
+func main() {
+	// requestByParams()
+	requestByHeaders()
+}
+
+func requestByParams() {
+	request, err := http.NewRequest(http.MethodGet, "http://httpbin.org/get", nil)
+	if err != nil {
+		panic(err)
+	}
+
+	// 设置请求参数，本质是个map
+	params := make(url.Values)
+	params.Add("name", "test")
+	params.Add("age", "18")
+
+	// 放到request上去
+	request.URL.RawQuery = params.Encode()
+
+	// http.Client.Do，发送请求
+	r, err := http.DefaultClient.Do(request)
+
+	// 关闭body
+	defer r.Body.Close()
+
+	data, err := io.ReadAll(r.Body)
+
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("put content: %s", string(data))
+}
+
+func requestByHeaders() {
+	request, err := http.NewRequest(http.MethodGet, "http://httpbin.org/get", nil)
+	if err != nil {
+		panic(err)
+	}
+
+	// 添加头部信息
+	request.Header.Add("Content-type", "text/html")
+	request.Header.Add("User-agent", "nidie")
+
+	r, err := http.DefaultClient.Do(request)
+
+	// 关闭body
+	defer r.Body.Close()
+
+	data, err := io.ReadAll(r.Body)
+
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("put content: %s", string(data))
+}
+```
+
+设置params需要用到url.Values，本质是个map，同时request.Header也是个map
+
+
+
+##### 获得response相关信息：
+
+```GO
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"io"
+	"net/http"
+
+	"golang.org/x/net/html/charset"
+	"golang.org/x/text/transform"
+)
+
+func responseBody(r *http.Response) {
+	content, _ := io.ReadAll(r.Body)
+	fmt.Printf("%s", content)
+}
+
+func status(r *http.Response) {
+	fmt.Println(r.StatusCode) // 状态吗
+	fmt.Println(r.Status) // 状态描述
+}
+
+func header(r *http.Response) {
+	// content-type Content-Type 是都可以获取到内容
+	fmt.Println(r.Header.Get("content-type"))
+}
+
+// 根据编码内容，处理body
+func encoding(r *http.Response) {
+	// content-type 中会提供编码，比如 content-type="text/html;charset=utf-8"
+	// html head meta 获取编码，
+	// <meta http-equiv=Content-Type content="text/html;charset=utf-8"
+	// 可以通过网页的头部猜测网页的编码信息。
+	// 创建一个bufReader
+	bufReader := bufio.NewReader(r.Body)
+	// 预读取
+	bytes, _ := bufReader.Peek(1024) // 不会移动 reader 的读取位置
+
+	e, _, _ := charset.DetermineEncoding(bytes, r.Header.Get("content-type"))
+
+	bodyReader := transform.NewReader(bufReader, e.NewDecoder())
+	content, _ := io.ReadAll(bodyReader)
+	fmt.Printf("%s", content)
+}
+
+func main() {
+	r, err := http.Get("https://baidu.com")
+	if err != nil {
+		panic(err)
+	}
+	defer func() {_ = r.Body.Close()}()
+
+	// responseBody(r)
+	// status(r)
+	// header(r)
+	encoding(r)
+}
+```
+
+##### 下载文件示例：
+
+```go
+package main
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+)
+
+func main() {
+	// 下载文件的连接
+	url := "https://pixabay.com/get/g53827618b10f2806c0cbcbd312a3b662a25293f07b7daf4dfd5f77541b8e6f28c3113c120590a1f8d907edd3c4908611cb1b764517c71eed70bf8b1f92b87137_1280.jpg"
+
+	// 下载的文件名称
+	filename := "leaf.jpg"
+	DownloadFileProgress(url, filename)
+}
+
+func DownloadFileProgress(url string, filename string) {
+	r, err := http.Get(url)
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+
+	// 创建文件
+	f, err := os.Create(filename)
+	if err != nil {
+		panic(err)
+	}
+
+	defer f.Close()
+
+	reader := &Reader{
+		Reader: r.Body,
+		Total: r.ContentLength,
+	}
+
+	_, _ = io.Copy(f, reader)
+}
+
+type Reader struct {
+	// 读取内容
+	Reader io.Reader
+	Total int64
+	Current int64
+}
+
+func (r *Reader) Read(p []byte) (n int, err error) {
+	n, err = r.Reader.Read(p)
+
+	r.Current += int64(n)
+	fmt.Printf("\r进度 %.2f%%", float64(r.Current * 10000 / r.Total) / 100)
+
+	return
+}
+```
+

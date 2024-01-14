@@ -1,0 +1,583 @@
+## 文件信息
+
+在golang中，文件信息对应到os.FileInto接口：
+```go
+// A FileInfo describes a file and is returned by Stat.
+type FileInfo interface {
+	Name() string       // 文件名称
+	Size() int64        // 文件大小
+	Mode() FileMode     // file mode bits、权限
+	ModTime() time.Time // modification time、修改时间
+	IsDir() bool        // abbreviation for Mode().IsDir()，是否是文件夹
+    
+    // 获取更加详细的文件信息， *syscall.Stat_t 反射来获取
+	Sys() any           // underlying data source (can return nil)
+}
+
+```
+
+基本的文件操作：
+
+1. 读取文件信息：FileInfo
+2. 写入内容：Write
+3. 读取文件内容 Read
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main() {
+	// Stat查看文件信息
+	fileInfo, err := os.Stat("./leaf.jpg")
+	if err != nil {
+		fmt.Println("err ", err)
+		return;
+	}
+	println("文件名称", fileInfo.Name())
+	println("文件大小", fileInfo.Size())
+	fmt.Println("文件修改时间", fileInfo.ModTime())
+	println("文件模式", fileInfo.Mode())
+}
+
+```
+
+
+
+## 创建文件、目录
+
+常用的基本操作：
+
+1. MkDir，打开一个文件夹，不存在则先打开，再创建
+2. MkdirAll，按照一个完整的层级创建文件夹
+3. remove，删除目录
+4. removeAll，强制删除全部的层级目录
+
+
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main() {
+	// os.ModePerm: 0777，linux里的操作权限
+	err := os.Mkdir("./file1", os.ModePerm)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("文件创建成果")
+
+	// 创建层级文件夹
+	err2 := os.MkdirAll("./a/b/c/d", os.ModePerm)
+	if err2 != nil {
+		fmt.Println(err2)
+	}
+	fmt.Println("层级文件创建成功")
+
+	err3 := os.Remove("./file1")
+	if err3 != nil {
+		fmt.Println(err3)
+	}
+	fmt.Println("删除文件成功")
+
+	err4 := os.RemoveAll("./a/b/c/d")
+	if err4 != nil {
+		fmt.Println(err4)
+	}
+	fmt.Println("删除层级文件成功")
+}
+
+```
+
+
+
+文件创建和删除
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main() {
+	// file对象就是创建的文件
+	file, err := os.Create("./test.go")
+	if err != nil {
+		fmt.Println("创建文件失败")
+		return
+	}
+	fmt.Println(file)
+	// 不把文件关了，只能有一个进程访问，删不掉的
+	defer func ()  {
+		file.Close()
+
+		// 删除，Remove
+		err = os.Remove("./test.go")
+		if err != nil {
+			fmt.Println("删除文件失败", err)
+			return
+		}
+	}()
+}
+
+```
+
+
+
+## io读 io.Reader接口
+
+1、要想读取文件内容，得先和文件建立连接
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main() {
+	// Open打开的默认只读
+	// os.Open()
+
+	// OpenFile打开的文件，可以指定对文件的操作模式
+	file, err := os.OpenFile("./leaf.jpg", os.O_WRONLY | os.O_RDONLY, os.ModePerm)
+	if err != nil {
+		fmt.Println("打开文件失败")
+		return;
+	}
+
+	// 在做完所有操作后，关闭文件
+	defer file.Close()
+
+	// 进行后续的操作
+}
+
+```
+
+2、Read方法读取
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main() {
+	// Open打开的默认只读
+	// os.Open()
+
+	// OpenFile打开的文件，可以指定对文件的操作模式
+	file, err := os.OpenFile("./leaf.jpg", os.O_RDWR, os.ModePerm)
+	if err != nil {
+		fmt.Println("打开文件失败")
+		return;
+	}
+
+	// 在做完所有操作后，关闭文件
+	defer file.Close()
+
+	// 进行后续的操作
+
+	// 创建一个byte[]切片，批量地读取
+	bytes := make([]byte, 1024)
+
+	n, err := file.Read(bytes)
+	// len表示读取的字节数
+	fmt.Println(n)
+	fmt.Println(err)
+	// 读取的内容在bytes中
+	fmt.Println(string(bytes))
+
+	// 光标不停的向下去，读取到bytes中
+	file.Read(bytes)
+}
+```
+
+## IO写（权限）io.Writer接口
+
+1. 建立连接，且flag是可读可写，os.OpenFile
+2. 使用file.Write或file.WriteString方法
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main() {
+	// 常用的mode
+	// os.O_WRONLY，只能写
+	// os.O_RDONLY，只能读
+	// os.O_APPEND，往尾部追加
+	file, _ := os.OpenFile("./test.txt", os.O_WRONLY | os.O_APPEND, os.ModePerm)
+	defer file.Close()
+
+	// 准备的数据
+	bs := []byte{65, 66, 67, 68, 69} // A, B, C, D, E
+	n, err := file.Write(bs)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println(n)
+
+	// 直接写入字符串
+	n, err = file.WriteString("\n Hello, world")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println(n)
+}
+```
+
+
+
+##### 练习：文件拷贝
+
+```go
+
+func MyCopy(srcFile, destFile string) {
+	src, err := os.OpenFile(srcFile, os.O_RDONLY, os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
+	// 注意，如果不存在的文件必须要加入os.O_CREATE的权限
+	dest, err := os.OpenFile(destFile, os.O_RDONLY | os.O_CREATE, os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
+	// 关闭
+	defer src.Close()
+	defer dest.Close()
+	// 一个个字节的读，可以更大的读
+	bs := make([]byte, 1024)
+	for {
+		_, err := src.Read(bs)
+
+		if err != nil {
+			if err == io.EOF {
+				break;
+			}
+			panic(err)
+		}
+		// 将缓冲区的内容读到目标目前中
+		dest.Write(bs)
+	}
+}
+
+// 调用系统的方法
+func Copy2(source, destination string) {
+   // 读取文件
+   sourceFile, err := os.Open(source)
+   if err != nil {
+      fmt.Println("Open错误:", err)
+   }
+   // 输出文件 O_WRONLY , O_CREATE 如果不不存在，则会创建
+   destinationFile, err := os.OpenFile(destination, os.O_WRONLY|os.O_CREATE, os.ModePerm)
+   if err != nil {
+      fmt.Println("OpenFile错误:", err)
+   }
+   // 关闭
+   defer sourceFile.Close()
+   defer destinationFile.Close()
+
+   // 具体的实现
+   written, err := io.Copy(destinationFile, sourceFile)
+   fmt.Println("文件的字节大小:", written)
+}
+```
+
+
+
+## Seeker接口
+
+内置的Seeker接口，可以设置文件的光标位置
+
+```go
+type Seeker interface {
+    // 1、offset 偏移量 3
+    // 2、whence 如何设置当前光标的位置。
+   Seek(offset int64, whence int) (int64, error)
+}
+// 如何让光标在第三个位置？
+// 1、找到当前光标在哪里
+//  a) 文件的头部， 0
+//  b） 文件的尾部  end
+//  c） 在任意地方，相对位置。
+
+const (
+	SeekStart   = 0 // 表示相对于文件的开头
+	SeekCurrent = 1 // 表示相对于当前光标所在的位置
+	SeekEnd     = 2 // 相对于文件的末尾
+)
+```
+
+
+
+## 断点续传
+
+思考几个问题：
+
+1、如果你要传的文件很大，70G，是否有方法可以缩短耗时？
+
+- 将文件拆分 
+- 同时多线程进行下载
+
+2、如果在文件传递过程中，程序被迫中断（断电、断网、内存满了..），下次重启之后，文件是否还需要重头再传？
+
+- 希望能够继续上传或者下载
+
+3、传递文件的时候，支持暂停和恢复上传？假设这个两个操作分布在重启前后？
+
+- 支持！
+
+
+
+file、read、write、seek
+
+思路：
+
+1、需要记住上一次传递了多少数据、temp.txt => 记录
+
+2、如果被暂停或者中断了，我们就可以读取这个temp.txt的记录，恢复上传
+
+3、删除temp.txt
+
+![image-20230226203841579](E:\2023.2.26 IO下\2023.2.26 IO流-学相伴.assets\image-20230226203841579.png)
+
+
+
+**所有人必须要要全部理解的一段代码**
+
+```go
+package main
+
+import (
+   "fmt"
+   "io"
+   "os"
+   "strconv"
+)
+
+// 断点续传
+func main() {
+
+   // 传输源文件地址
+   srcFile := "C:\\Users\\遇见狂神说\\Desktop\\client\\gp.png"
+   // 传输的目标位置
+   destFile := "D:\\Environment\\GoWorks\\src\\xuego\\lesson11\\server\\gp-upload.png"
+   // 临时记录文件
+   tempFile := "D:\\Environment\\GoWorks\\src\\xuego\\lesson11\\temp.txt"
+
+   // 创建对应的file对象，连接起来
+   file1, _ := os.Open(srcFile)
+   file2, _ := os.OpenFile(destFile, os.O_CREATE|os.O_RDWR, os.ModePerm)
+   file3, _ := os.OpenFile(tempFile, os.O_CREATE|os.O_RDWR, os.ModePerm)
+   defer file1.Close()
+   defer file2.Close()
+   fmt.Println("file1/2/3 文件连接建立完毕")
+
+   // 1、读取temp.txt
+   file3.Seek(0, io.SeekStart)
+   buf := make([]byte, 1024, 1024)
+   n, _ := file3.Read(buf)
+   // 2、转换成string - 数字。
+   countStr := string(buf[:n])
+   count, _ := strconv.ParseInt(countStr, 10, 64)
+   fmt.Println("temp.txt中记录的值为：", count) // 5120
+
+   // 3、设置读写的偏移量
+   file1.Seek(count, io.SeekStart)
+   file2.Seek(count, io.SeekStart)
+   fmt.Println("file1/2 光标已经移动到了目标位置")
+
+   // 4、开始读写（复制、上传）
+   bufData := make([]byte, 1024, 1024)
+   // 5、需要记录读取了多少个字节
+   total := int(count)
+
+   for {
+      // 读取数据
+      readNum, err := file1.Read(bufData)
+      if err == io.EOF { // file1 读取完毕了
+         fmt.Println("文件传输完毕了")
+         file3.Close()
+         os.Remove(tempFile)
+         break
+      }
+      
+      // 向目标文件中写入数据
+      writeNum, err := file2.Write(bufData[:readNum])
+      
+      // 将写入数据放到 total中, 在这里total 就是传输的进度
+      total = total + writeNum
+      // temp.txt 存放临时记录数据
+      file3.Seek(0, io.SeekStart) // 将光标重置到开头
+      file3.WriteString(strconv.Itoa(total))
+
+   }
+
+}
+```
+
+
+
+## 遍历文件夹
+
+**下去一定要自己实现**
+
+```go
+package main
+
+import (
+   "fmt"
+   "log"
+   "os"
+)
+
+// cd /d 文件夹路径
+// tree /F , 查看当前文件夹下的所有文件
+
+// 遍历文件夹
+// 1、读取当前文件夹下的所有文件
+// 2、如果是文件夹，进入文件夹，继续读取里面的所有文件
+// 3、设置一些结构化代码
+func main() {
+   dir := "D:\\Environment\\GoWorks\\src\\xuego"
+   tree(dir, 0)
+}
+
+// 日常调试测试常用fmt输出 、 工作中or项目中更多是log日志输出
+func tree(dir string, level int) {
+   // 编写层级
+   tabString := "|--"
+   for i := 0; i < level; i++ {
+      tabString = "|    " + tabString
+   }
+
+   // 获取目录 ReadDir, 返回目录信息[]DirEntry，多个文件信息
+   fileInfos, err := os.ReadDir(dir)
+   if err != nil {
+      log.Println(err)
+   }
+
+   // 遍历出来所有文件之后，获取里面的单个文件
+   for _, file := range fileInfos {
+      // 文件夹中文件的全路径展示
+      filename := dir + "\\" + file.Name()
+      fmt.Println(tabString + file.Name())
+      // 如果是文件夹，再次遍历
+      if file.IsDir() {
+         tree(filename, level+1)
+      }
+   }
+
+}
+```
+
+
+
+## bufio
+
+Go语言自带的IO操作包。bufio，使用这个包可以大幅提升文件的读写效率。
+
+buf： 缓冲区.
+
+io操作效率本身是还可以的，频繁访问本地磁盘文件（效率低）
+
+所以说 bufio ，提供了一个缓冲区，读和写都先在缓冲区中，最后再一次性读取或者写入到文件里，降低访问本地磁盘的次数。
+
+![image-20230226214440096](E:\2023.2.26 IO下\2023.2.26 IO流-学相伴.assets\image-20230226214440096.png)
+
+bufio写入
+
+```go
+package main
+
+import (
+   "bufio"
+   "fmt"
+   "log"
+   "os"
+)
+
+// bufio 的应用
+func main() {
+   file, err := os.Open("D:\\Environment\\GoWorks\\src\\xuego\\lesson11\\demo01.go")
+   if err != nil {
+      log.Println(err)
+   }
+   defer file.Close()
+
+   // 读取文件
+   // 创建一个bufio包下的 reader对象。
+   //bufioReader := bufio.NewReader(file)
+   //buf := make([]byte, 1024)
+   //n, err := bufioReader.Read(buf)
+   //fmt.Println("读取到了多少个字节：", n)
+
+   // 读取键盘的输入
+   // 键盘的输入，实际上是流 os.Stdin
+   inputReader := bufio.NewReader(os.Stdin)
+   // delim 到哪里结束读取
+   readString, _ := inputReader.ReadString('\n')
+   fmt.Println("读取键盘输入的信息：", readString)
+
+}
+```
+
+bufio写出
+
+```go
+package main
+
+import (
+   "bufio"
+   "fmt"
+   "os"
+)
+
+// 写入
+func main() {
+   file, _ := os.OpenFile("D:\\Environment\\GoWorks\\src\\xuego\\lesson11\\a.txt",
+      os.O_RDWR|os.O_CREATE,
+      os.ModePerm)
+   defer file.Close()
+
+   // bufio
+   fileWrite := bufio.NewWriter(file)
+   writeNum, _ := fileWrite.WriteString("kuangshen")
+   fmt.Println("writeNum:", writeNum)
+   // 发现并没有写出到文件，是留在了缓冲区，所以我们需要调用 flush 刷新缓冲区
+   // 手动刷新进文件
+   fileWrite.Flush()
+}
+```
+
+
+
+
+
+
+
+
+
+
+
