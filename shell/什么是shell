@@ -1,0 +1,87 @@
+#### 什么是shell
+
+shell的作用：
+
+* 解析用户输入的命令并执行
+* 输入一条命令，就执行一条
+
+![image-20240910150446252](https://typora-1316630864.cos.ap-shanghai.myqcloud.com/image-20240910150446252.png)
+
+用户发出的程序命令（nginx、ls等），由shell命令解释器来执行。换句话说，shell是包裹着操作系统的外壳，处于最外层，把用户的输入，**解释**给操作系统，然后展示处理操作系统的执行结果。
+
+![image-20240910150742836](https://typora-1316630864.cos.ap-shanghai.myqcloud.com/image-20240910150742836.png)
+
+诸如ubuntu、centos的linux系统，bash、zsh实现了shell。
+
+
+
+### shell脚本
+
+当命令或者程序写在文件中，执行文件，读取其中的代码，这个程序文件就称之为shell焦恩。
+
+* windows中存在 ***.bat**文件
+* linux中常用 ***.sh** 脚本文件
+
+
+
+### Shebang
+
+计算机程序中， **shebang** 指的是出现在文本文件中的第一行前两个字符 `#!`
+
+在Unix系统中，程序会分析 `shebang`后面的内容，作为解释器的指令，比如：
+
+* 以 `#!/bin/sh`，程序会调用 /bin/sh 去执行后面的命令
+* 以 `#!/usr/bin/python`，程序会调用 python 去执行后面的命令
+
+
+
+注意事项：
+
+1. 如果未指定Shebang，默认用当前shell执行脚本，即 `$SHELL`
+2. 如果指定了可执行的解释器，如 `/bin/bash /user/bin/python`，程序在执行时，文件名会作为参数传递给解释器
+3. 如果`#!`指定的解释器没有可执行权限，则会报错：bad intepreter: Permission denied
+4. 如果不是一个可执行文件，那么指定的解释器将会被忽略，转而交给`当前的SHELL`去执行
+5. #!之后的解释程序，必须写起绝对路径，它是不会自动到 $PATH 中寻找可执行的文件的（默认输入在终端里的，会去`$PATH`中查找。
+
+
+
+案例：
+```shell
+#! /usr/bin/bash
+# 后面是注释
+# this is a shell script
+
+echo "wo hao li hai"
+```
+
+
+
+#### 执行shell脚本的方式
+
+* `bash xxx.sh`
+* 使用绝对、相对路径执行脚本，文件需要有x权限
+* `source xxx.sh`或者`. xxx.sh`
+
+```bash
+ubuntu@10-7-61-250:~$ cat ./test.sh
+#! /bin/bash
+
+echo "wo hao li hai"
+ubuntu@10-7-61-250:~$ bash test.sh
+wo hao li hai
+ubuntu@10-7-61-250:~$ source test.sh
+wo hao li hai
+ubuntu@10-7-61-250:~$ ./test.sh
+-bash: ./test.sh: Permission denied
+ubuntu@10-7-61-250:~$ chmod +x ./test.sh
+ubuntu@10-7-61-250:~$ ./test.sh
+wo hao li hai
+ubuntu@10-7-61-250:~$ 
+```
+
+
+
+>  shell是弱类型的脚本语言，类似于js。
+
+
+
