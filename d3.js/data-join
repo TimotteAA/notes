@@ -1,0 +1,15 @@
+d3.js中的数据Join，其实就是把js中的数组，和svg图元（circle、rects、path）进行关联。
+
+
+
+selectAll告知d3和什么图元进行join，.data则指的是js数组，核心是join
+
+
+
+enter：新的数据，但是没有图元
+
+update：数据发送变化，图元更新
+
+exit：数据无了，图元如何操作
+
+![image-20250208084412914](https://typora-1316630864.cos.ap-shanghai.myqcloud.com/image-20250208084412914.png)
